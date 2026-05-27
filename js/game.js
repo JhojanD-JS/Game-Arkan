@@ -318,7 +318,10 @@ export class ArkanoidGame {
     this.sella = new Sella();
     this.balls = [];
     this.powerUps = [];
-    this.currentLevel = Math.max(0, (this.userData.maxLevelReached || 1) - 1);
+    this.currentLevel = Math.max(
+      0,
+      (this.userData.currentSavedLevel || this.userData.maxLevelReached || 1) - 1
+    );
     this.laserActive = 0;
     this.laserCooldown = 0;
     this.laserBeamTimer = 0;
@@ -393,6 +396,7 @@ export class ArkanoidGame {
     this.powerUps = [];
 
     this.userData = updateMaxLevel(this.username, this.userData, this.currentLevel + 1);
+    this.userData.currentSavedLevel = this.currentLevel + 1;
     this.levelManager.loadLevel(this.currentLevel);
     this.balls = [];
     this.spawnBall();
@@ -408,6 +412,8 @@ export class ArkanoidGame {
 
     if (this.userData.lives <= 0) {
       saveGameScore(this.username, this.userData.points, this.currentLevel + 1);
+      this.userData.currentSavedLevel = 1;
+      this.userData.lives = 3;
       saveUserImmediate(this.username, this.userData);
       this.setState("GAME_OVER");
       return;
@@ -814,6 +820,7 @@ export class ArkanoidGame {
       ctx.globalAlpha = alpha;
       let grad = ctx.createLinearGradient(t.x, t.y, t.x + t.w, t.y);
       grad.addColorStop(0, skin.sellaGradient[0]);
+      grad.addColorStop(0.5, "#ffffff");
       grad.addColorStop(1, skin.sellaGradient[1]);
       ctx.fillStyle = grad;
       ctx.beginPath();
@@ -949,7 +956,7 @@ export class ArkanoidGame {
       this.ctx.globalAlpha = 0.7;
       this.ctx.font = "10px 'Press Start 2P', monospace";
       this.ctx.fillStyle = "#fff";
-      this.ctx.fillText("⚡ TOCA / ESPACIO PARA LANZAR", 24, 110);
+      this.ctx.fillText("⚡ TOCA / ESPACIO PARA LANZAR", 24, 95);
     }
 
     this.ctx.globalAlpha = 1;
@@ -959,7 +966,7 @@ export class ArkanoidGame {
     this.ctx.fillText(
       `NIVEL ${this.levelManager.getCurrentLevel()}`,
       SETTINGS.worldW - 24,
-      110,
+      95,
     );
 
     if (this.state === "LEVEL_INTRO") {
@@ -1129,7 +1136,7 @@ export class ArkanoidGame {
 
           let destroyed = brick.hit();
           let gain =
-            (destroyed ? brick.score : 10) *
+            (destroyed ? brick.score : 1) *
             this.x2Multiplier *
             this.comboMultiplier;
 
@@ -1288,7 +1295,7 @@ export class ArkanoidGame {
             this.levelManager.bricks.forEach((br) => {
               if (br.alive) {
                 let destroyed = br.hit();
-                let gain = br.score * this.x2Multiplier * this.comboMultiplier;
+                let gain = (destroyed ? br.score : 1) * this.x2Multiplier * this.comboMultiplier;
                 this.userData = addPoints(this.username, this.userData, gain);
                 if (destroyed) {
                   this.levelManager.onBrickDestroyed();
@@ -1376,7 +1383,9 @@ export class ArkanoidGame {
     const teniaBolas = this.balls.length;
     this.balls = this.balls.filter((b) => b.alive);
     if (this.balls.length === 0 && teniaBolas > 0) {
-      this.loseLife();
+      if (!this._levelClearing) {
+        this.loseLife();
+      }
     }
   }
 

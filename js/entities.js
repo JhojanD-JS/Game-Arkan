@@ -356,7 +356,7 @@ export class Brick {
     this.hp = hp;
     this.maxHp = hp;
     this.alive = true;
-    this.score = 50 * hp;
+    this.score = 3 + Math.floor(Math.random() * 3); // Entre 3 y 5 puntos
     this.hue = (row * 37 + col * 19 + diff * 360) % 360;
     
     this.cracks = [];

@@ -128,6 +128,12 @@ canvas:active {
   gap: 12px;
 }
 
+#hudCenter {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
 .pause-btn {
   background: rgba(255, 61, 242, 0.25);
   border: 1px solid var(--neon-magenta);
