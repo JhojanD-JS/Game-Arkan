@@ -306,12 +306,25 @@ export class Brick {
       ctx.strokeRect(this.x + 1, this.y + 1, this.w - 2, this.h - 2);
       return;
     }
-    ctx.fillStyle = `hsla(${this.hue},85%,65%,0.85)`;
+    
+    let ratio = Math.max(0.2, this.hp / this.maxHp);
+    ctx.fillStyle = `hsla(${this.hue},85%,${40 + 25 * ratio}%,${0.5 + 0.35 * ratio})`;
     ctx.fillRect(this.x, this.y, this.w, this.h);
-    ctx.strokeStyle = `hsla(${this.hue},100%,75%,0.9)`;
+    ctx.strokeStyle = `hsla(${this.hue},100%,${60 + 15 * ratio}%,0.9)`;
     ctx.strokeRect(this.x + 1, this.y + 1, this.w - 2, this.h - 2);
-    ctx.fillStyle = `rgba(255,255,255,0.2)`;
+    
+    ctx.fillStyle = `rgba(255,255,255,${0.1 + 0.15 * ratio})`;
     ctx.fillRect(this.x + 2, this.y + 2, this.w - 4, 4);
+    
+    if (this.hp > 1) {
+      ctx.fillStyle = "rgba(0,0,0,0.5)";
+      ctx.font = "bold 12px sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(this.hp, this.x + this.w / 2, this.y + this.h / 2 + 1);
+      ctx.fillStyle = "white";
+      ctx.fillText(this.hp, this.x + this.w / 2, this.y + this.h / 2);
+    }
   }
 }
 
@@ -399,8 +412,8 @@ export class LevelManager {
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
         let token = lvl.layout[r][c];
-        if (token === "0") continue;
-        let hp = parseInt(token, 10) || 1;
+        if (token === 0 || token === "0") continue;
+        let hp = typeof token === "number" ? token : parseInt(token, 10) || 1;
         this.bricks.push(
           new Brick(
             areaX + c * (brickW + gap),

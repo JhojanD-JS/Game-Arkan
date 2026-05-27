@@ -302,7 +302,7 @@ export class ArkanoidGame {
     this.sella = new Sella();
     this.balls = [];
     this.powerUps = [];
-    this.currentLevel = 0;
+    this.currentLevel = Math.max(0, (this.userData.maxLevelReached || 1) - 1);
     this.laserActive = 0;
     this.laserCooldown = 0;
     this.laserBeamTimer = 0;
@@ -860,17 +860,39 @@ export class ArkanoidGame {
       110,
     );
 
-    if (this.state === "LEVEL_INTRO" && this.levelIntroText) {
-      this.ctx.font = "64px 'Press Start 2P'";
-      this.ctx.fillStyle = "#00f5ff";
-      this.ctx.shadowBlur = 20;
-      this.ctx.shadowColor = "#ff3df2";
+    if (this.state === "LEVEL_INTRO") {
+      this.ctx.fillStyle = "rgba(0,0,0,0.6)";
+      this.ctx.fillRect(0, 0, SETTINGS.worldW, SETTINGS.worldH);
+      
+      this.ctx.fillStyle = "white";
+      this.ctx.font = "32px 'Press Start 2P', monospace";
       this.ctx.textAlign = "center";
+      this.ctx.textBaseline = "middle";
       this.ctx.fillText(
-        this.levelIntroText,
+        `NIVEL ${this.currentLevel + 1}`,
         SETTINGS.worldW / 2,
-        SETTINGS.worldH / 2,
+        SETTINGS.worldH / 2 - 60
       );
+      
+      this.ctx.fillStyle = "var(--neon-cyan)";
+      this.ctx.font = "16px 'Press Start 2P', monospace";
+      this.ctx.fillText(
+        this.levelManager.levelName || "",
+        SETTINGS.worldW / 2,
+        SETTINGS.worldH / 2 - 10
+      );
+      
+      let count = Math.ceil(this.introTimer);
+      if (count > 0 && count <= 3) {
+        let scale = 1 + (this.introTimer % 1) * 0.5;
+        this.ctx.save();
+        this.ctx.translate(SETTINGS.worldW / 2, SETTINGS.worldH / 2 + 70);
+        this.ctx.scale(scale, scale);
+        this.ctx.fillStyle = "var(--neon-magenta)";
+        this.ctx.font = "40px 'Press Start 2P', monospace";
+        this.ctx.fillText(count.toString(), 0, 0);
+        this.ctx.restore();
+      }
     }
 
     if (this.levelCompleteAnimation) {
@@ -969,8 +991,23 @@ export class ArkanoidGame {
           let ot = ball.y + ball.r - brick.y,
             ob = brick.y + brick.h - (ball.y - ball.r);
 
-          if (Math.min(ol, or) < Math.min(ot, ob)) ball.vx *= -1;
-          else ball.vy *= -1;
+          if (Math.min(ol, or) < Math.min(ot, ob)) {
+            if (ol < or) {
+              ball.vx = -Math.abs(ball.vx);
+              ball.x = brick.x - ball.r;
+            } else {
+              ball.vx = Math.abs(ball.vx);
+              ball.x = brick.x + brick.w + ball.r;
+            }
+          } else {
+            if (ot < ob) {
+              ball.vy = -Math.abs(ball.vy);
+              ball.y = brick.y - ball.r;
+            } else {
+              ball.vy = Math.abs(ball.vy);
+              ball.y = brick.y + brick.h + ball.r;
+            }
+          }
 
           let destroyed = brick.hit();
           let gain =

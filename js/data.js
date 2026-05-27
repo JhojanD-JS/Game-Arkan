@@ -292,17 +292,22 @@ const generateLevels = (count) => {
     const layout = [];
 
     for (let r = 0; r < rows; r++) {
-      let row = "";
+      let row = [];
       for (let c = 0; c < cols; c++) {
         let hp = pattern(r, c, rows, cols, i);
         hp = Math.min(hp, era.maxHp);
         hp = Math.max(0, hp);
+        
+        if (hp > 0) {
+          hp += Math.floor((levelNum - 1) / 4); // +1 HP cada 4 niveles
+        }
+
         if (levelNum >= 31 && (r === 2 || r === rows - 3) && c % 3 === 0)
           hp = -1;
         if (era.holePct > 0 && r > 0 && r < rows - 1) {
           if ((r * 7 + c * 13 + i * 17) % 100 < era.holePct * 100) hp = 0;
         }
-        row += hp.toString();
+        row.push(hp);
       }
       layout.push(row);
     }
