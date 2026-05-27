@@ -337,13 +337,19 @@ export class Brick {
       let angle = Math.random() * Math.PI * 2;
       let line = [];
       let points = 3 + Math.floor(Math.random() * 2);
-      let rMax = Math.max(w, h) / 1.2;
+      let rMax = Math.max(w, h);
       for (let p = 1; p <= points; p++) {
         let radius = (rMax / points) * p;
         let pAngle = angle + (Math.random() - 0.5) * 0.8;
+        let px = Math.cos(pAngle) * radius;
+        let py = Math.sin(pAngle) * radius;
+        
+        px = clamp(px, -w / 2 + 1.5, w / 2 - 1.5);
+        py = clamp(py, -h / 2 + 1.5, h / 2 - 1.5);
+        
         line.push({
-           x: Math.cos(pAngle) * radius,
-           y: Math.sin(pAngle) * radius
+           x: px,
+           y: py
         });
       }
       this.cracks.push(line);

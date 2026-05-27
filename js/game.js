@@ -65,6 +65,8 @@ export class ArkanoidGame {
     this.laserActive = 0;
     this.laserCooldown = 0;
     this.laserBeamTimer = 0;
+    this.ghostActive = 0;
+    this.megaActive = 0;
     this.currentLevel = 0;
     this.touchActive = false;
     this.lastTs = 0;
@@ -307,6 +309,8 @@ export class ArkanoidGame {
     this.laserActive = 0;
     this.laserCooldown = 0;
     this.laserBeamTimer = 0;
+    this.ghostActive = 0;
+    this.megaActive = 0;
     this.shieldActive = 0;
     this.magnetActive = 0;
     this.x2Active = 0;
@@ -367,6 +371,8 @@ export class ArkanoidGame {
     this.laserActive = 0;
     this.laserCooldown = 0;
     this.laserBeamTimer = 0;
+    this.ghostActive = 0;
+    this.megaActive = 0;
     this.shieldActive = 0;
     this.magnetActive = 0;
     this.x2Active = 0;
@@ -813,8 +819,8 @@ export class ArkanoidGame {
     this.levelManager.draw(this.ctx);
 
     for (let p of particlePool) if (p.active) p.draw(this.ctx);
-    for (let b of this.balls) b.draw(this.ctx);
-    for (let p of this.powerUps) p.draw(this.ctx);
+    for (let b of this.balls) b.draw(this.ctx, this.ghostActive > 0);
+    if (this.combo > 1) { for (let p of this.powerUps) p.draw(this.ctx); }
 
     if (this.shieldActive > 0) {
       this.ctx.save();
@@ -915,7 +921,9 @@ export class ArkanoidGame {
       this.shieldActive > 0 ||
       this.magnetActive > 0 ||
       this.x2Active > 0 ||
-      this.laserActive > 0
+      this.laserActive > 0 ||
+      this.ghostActive > 0 ||
+      this.megaActive > 0
     ) {
       let acts = [];
       if (this.shieldActive > 0)
@@ -925,6 +933,10 @@ export class ArkanoidGame {
       if (this.x2Active > 0) acts.push(`⭐x2 ${Math.ceil(this.x2Active)}s`);
       if (this.laserActive > 0)
         acts.push(`🔥 ${Math.ceil(this.laserActive)}s`);
+      if (this.ghostActive > 0)
+        acts.push(`👻 ${Math.ceil(this.ghostActive)}s`);
+      if (this.megaActive > 0)
+        acts.push(`🔴 ${Math.ceil(this.megaActive)}s`);
 
       this.ctx.font = "8px 'Press Start 2P', monospace";
       this.ctx.fillStyle = "rgba(255,255,255,0.85)";
@@ -953,6 +965,14 @@ export class ArkanoidGame {
     if (this.laserActive > 0) this.laserActive -= dt;
     if (this.laserCooldown > 0) this.laserCooldown -= dt;
     if (this.laserBeamTimer > 0) this.laserBeamTimer -= dt;
+
+    if (this.ghostActive > 0) this.ghostActive -= dt;
+    if (this.megaActive > 0) {
+      this.megaActive -= dt;
+      this.balls.forEach((b) => (b.r = SETTINGS.ballRadius * 2.5));
+    } else {
+      this.balls.forEach((b) => (b.r = SETTINGS.ballRadius));
+    }
 
     if (this.shieldActive > 0) {
       this.shieldActive -= dt;
@@ -984,21 +1004,23 @@ export class ArkanoidGame {
           let ot = ball.y + ball.r - brick.y,
             ob = brick.y + brick.h - (ball.y - ball.r);
 
-          if (Math.min(ol, or) < Math.min(ot, ob)) {
-            if (ol < or) {
-              ball.vx = -Math.abs(ball.vx);
-              ball.x = brick.x - ball.r;
+          if (!(this.ghostActive > 0)) {
+            if (Math.min(ol, or) < Math.min(ot, ob)) {
+              if (ball.vx > 0) {
+                ball.vx = -Math.abs(ball.vx);
+                ball.x = brick.x - ball.r;
+              } else {
+                ball.vx = Math.abs(ball.vx);
+                ball.x = brick.x + brick.w + ball.r;
+              }
             } else {
-              ball.vx = Math.abs(ball.vx);
-              ball.x = brick.x + brick.w + ball.r;
-            }
-          } else {
-            if (ot < ob) {
-              ball.vy = -Math.abs(ball.vy);
-              ball.y = brick.y - ball.r;
-            } else {
-              ball.vy = Math.abs(ball.vy);
-              ball.y = brick.y + brick.h + ball.r;
+              if (ball.vy > 0) {
+                ball.vy = -Math.abs(ball.vy);
+                ball.y = brick.y - ball.r;
+              } else {
+                ball.vy = Math.abs(ball.vy);
+                ball.y = brick.y + brick.h + ball.r;
+              }
             }
           }
 
@@ -1050,6 +1072,8 @@ export class ArkanoidGame {
                 "BOMB",
                 "X2",
                 "LIFE",
+                "MYSTERY",
+                "MYSTERY",
               ];
               let type = pool[Math.floor(Math.random() * pool.length)];
               this.powerUps.push(
@@ -1140,10 +1164,38 @@ export class ArkanoidGame {
             );
             this.addShake(3);
             if (navigator.vibrate) navigator.vibrate([30, 20, 30]);
-            showPowerupNotification(msg["LIFE"]);
+            showPowerupNotification("¡VIDA EXTRA!");
           } else {
             audioManager.playPowerUp();
             showPowerupNotification("❤️ ¡VIDAS AL MÁXIMO! ❤️");
+          }
+        } else if (pu.type === "MYSTERY") {
+          let rnd = Math.random();
+          if (rnd < 0.33) {
+            this.ghostActive = BALANCE.GHOST_DURATION;
+            showPowerupNotification("👻 GHOST BALL");
+          } else if (rnd < 0.66) {
+            this.megaActive = BALANCE.MEGA_DURATION;
+            showPowerupNotification("🔴 MEGA BALL");
+          } else {
+            showPowerupNotification("⚡ EMP BLAST");
+            this.addShake(20);
+            this.ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+            this.ctx.fillRect(0, 0, SETTINGS.worldW, SETTINGS.worldH);
+            this.levelManager.bricks.forEach((br) => {
+              if (br.alive) {
+                let destroyed = br.hit();
+                let gain = br.score * this.x2Multiplier * this.comboMultiplier;
+                this.userData = addPoints(this.username, this.userData, gain);
+                if (destroyed) {
+                  this.levelManager.onBrickDestroyed();
+                  let pColor = `hsl(${br.hue}, 85%, 50%)`;
+                  spawnBlockFragments(br.x, br.y, br.w, br.h, pColor);
+                  spawnParticleSystem(br.x + br.w / 2, br.y + br.h / 2, pColor, 10);
+                }
+              }
+            });
+            if (this.levelManager.remaining === 0) this.onLevelCleared();
           }
         } else {
           audioManager.playPowerUp();

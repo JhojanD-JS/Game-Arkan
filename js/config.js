@@ -8,6 +8,8 @@ export const BALANCE = {
   TRAIL_LENGTH: 7,
   EXTEND_TIMEOUT: 10,
   MAX_LIVES: 5,
+  GHOST_DURATION: 4,
+  MEGA_DURATION: 6,
 };
 export const ORIGINAL_BALANCE = { ...BALANCE };
 
@@ -21,8 +23,8 @@ export const SETTINGS = {
   sellaBaseW: 140,
   sellaMaxW: 240,
   sellaSpeed: 950,
-  ballSpeed: 530,
-  ballMaxSpeed: 820,
+  ballSpeed: 500,
+  ballMaxSpeed: 620,
   laserDuration: 3,
   laserCooldown: 0.22,
   shakeDecay: 18,
@@ -40,6 +42,7 @@ export const POWERUP_COLORS = {
   MAGNET: "#ffcc00",
   X2: "#ff66ff",
   LIFE: "#ff4466",
+  MYSTERY: "#ffffff",
 };
 
 export const POWERUP_ICONS = {
@@ -52,4 +55,5 @@ export const POWERUP_ICONS = {
   MAGNET: "🧲",
   X2: "x2",
   LIFE: "❤️",
+  MYSTERY: "❓",
 };
