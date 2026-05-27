@@ -332,7 +332,7 @@ export class ArkanoidGame {
     this.x2Active = 0;
     this.x2Multiplier = 1;
     this.pointsEarnedThisRun = 0;
-    this.userData.lives = BALANCE.MAX_LIVES;
+    this.userData.lives = this.userData.lives ?? BALANCE.MAX_LIVES;
     this.combo = 0;
     this.comboMultiplier = 1;
     this._lastLives = -1;
@@ -371,7 +371,6 @@ export class ArkanoidGame {
   }
 
   advanceLevel() {
-    this.userData.lives = BALANCE.MAX_LIVES;
     this.applyAmbientLight();
     this.updateHUD();
 
@@ -506,7 +505,7 @@ export class ArkanoidGame {
     document.getElementById("pauseBtn").style.display = "none";
     document.getElementById("overlayTitle").innerText = "ARKAN CYBERPUNK";
     document.getElementById("overlayText").innerHTML =
-      `<span style="color: var(--neon-cyan)">⚡ ${TOTAL_LEVELS} NIVELES PROGRESIVOS ⚡</span><br><br>Ingresa tu nombre y elige dificultad`;
+      `<span style="color: var(--neon-cyan)">⚡ ${TOTAL_LEVELS} NIVELES PROGRESIVOS ⚡</span><br><span style="font-size: 0.8em; color: var(--neon-pink)">by JhojanD-Js</span><br><br>Ingresa tu nombre y elige dificultad`;
     document.getElementById("overlayHelp").innerHTML =
       `<input id="usernameInput" placeholder="Nombre" style="width:100%;padding:14px;border-radius:24px;border:1px solid rgba(0,245,255,.3);background:#091224;color:white;font-size:12px;font-family:'Press Start 2P',monospace;letter-spacing:1px;outline:none;margin-bottom:12px;"><br><select id="difficultySelect" style="width:100%;padding:12px;border-radius:24px;background:#091224;color:white;border:1px solid #0ff;font-family:'Press Start 2P',monospace;letter-spacing:1px;outline:none;"><option value="EASY">FÁCIL</option><option value="NORMAL" selected>NORMAL</option><option value="HARD">DIFÍCIL</option></select>`;
 
@@ -818,13 +817,19 @@ export class ArkanoidGame {
       let alpha = 0.35 * (1 - i / this.sellaTrail.length);
       ctx.save();
       ctx.globalAlpha = alpha;
-      let grad = ctx.createLinearGradient(t.x, t.y, t.x + t.w, t.y);
-      grad.addColorStop(0, skin.sellaGradient[0]);
-      grad.addColorStop(0.5, "#ffffff");
-      grad.addColorStop(1, skin.sellaGradient[1]);
-      ctx.fillStyle = grad;
+      
+      if (!this._cachedTrailGrad || this._cachedTrailW !== t.w) {
+        this._cachedTrailGrad = ctx.createLinearGradient(0, 0, t.w, 0);
+        this._cachedTrailGrad.addColorStop(0, skin.sellaGradient[0]);
+        this._cachedTrailGrad.addColorStop(0.5, "#ffffff");
+        this._cachedTrailGrad.addColorStop(1, skin.sellaGradient[1]);
+        this._cachedTrailW = t.w;
+      }
+      
+      ctx.translate(t.x, t.y);
+      ctx.fillStyle = this._cachedTrailGrad;
       ctx.beginPath();
-      ctx.roundRect(t.x, t.y, t.w, this.sella.h, 14);
+      ctx.roundRect(0, 0, t.w, this.sella.h, 14);
       ctx.fill();
       ctx.restore();
     }
@@ -935,14 +940,15 @@ export class ArkanoidGame {
     if (this.shieldActive > 0) {
       this.ctx.save();
       this.ctx.globalAlpha = Math.min(1, this.shieldActive / 2) * 0.7;
-      this.ctx.shadowBlur = 20;
-      this.ctx.shadowColor = "#4488ff";
-      this.ctx.strokeStyle = "#4488ff";
-      this.ctx.lineWidth = 4;
-      this.ctx.beginPath();
-      this.ctx.moveTo(16, SETTINGS.worldH - 10);
-      this.ctx.lineTo(SETTINGS.worldW - 16, SETTINGS.worldH - 10);
-      this.ctx.stroke();
+      
+      // Dibujar resplandor sin shadowBlur para evitar LAG
+      this.ctx.fillStyle = "rgba(68,136,255,0.1)";
+      this.ctx.fillRect(0, SETTINGS.worldH - 18, SETTINGS.worldW, 18);
+      this.ctx.fillStyle = "rgba(68,136,255,0.3)";
+      this.ctx.fillRect(0, SETTINGS.worldH - 12, SETTINGS.worldW, 12);
+      this.ctx.fillStyle = "#4488ff";
+      this.ctx.fillRect(0, SETTINGS.worldH - 4, SETTINGS.worldW, 4);
+      
       this.ctx.restore();
     }
 

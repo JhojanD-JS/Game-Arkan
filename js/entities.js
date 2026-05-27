@@ -195,19 +195,19 @@ export class Sella {
     ctx.fill();
     ctx.globalAlpha = 1;
 
-    const grad = ctx.createLinearGradient(
-      this.x,
-      this.y,
-      this.x + this.w,
-      this.y,
-    );
-    grad.addColorStop(0, skin.sellaGradient[0]);
-    grad.addColorStop(0.5, "#ffffff");
-    grad.addColorStop(1, skin.sellaGradient[1]);
+    if (!this._cachedGrad || this._cachedW !== this.w) {
+      this._cachedGrad = ctx.createLinearGradient(0, 0, this.w, 0);
+      this._cachedGrad.addColorStop(0, skin.sellaGradient[0]);
+      this._cachedGrad.addColorStop(0.5, "#ffffff");
+      this._cachedGrad.addColorStop(1, skin.sellaGradient[1]);
+      this._cachedW = this.w;
+    }
 
-    ctx.fillStyle = grad;
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.fillStyle = this._cachedGrad;
     ctx.beginPath();
-    ctx.roundRect(this.x, this.y, this.w, this.h, 14);
+    ctx.roundRect(0, 0, this.w, this.h, 14);
     ctx.fill();
     ctx.strokeStyle = skin.sellaGlow;
     ctx.lineWidth = 2;
@@ -447,7 +447,6 @@ export class Brick {
     
     if (this.hp > 1) {
       ctx.fillStyle = "rgba(0,0,0,0.5)";
-      ctx.font = "8px 'Press Start 2P', monospace";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText(this.hp, this.x + this.w / 2, this.y + this.h / 2 + 1);
@@ -564,6 +563,7 @@ export class LevelManager {
     this.remaining--;
   }
   draw(ctx) {
+    ctx.font = "8px 'Press Start 2P', monospace";
     for (let b of this.bricks) b.draw(ctx);
   }
   getCurrentLevel() {
