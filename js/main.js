@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
   );
 
   initCrossTabSync(() => {
-    alert("¡Juego pausado! Tienes Arkanoid Cyberpunk abierto en otra pestaña activa.");
+    alert("¡Juego pausado! Tienes Arkan Cyberpunk abierto en otra pestaña activa.");
     if (game.state === "PLAYING") {
       game.togglePause();
     }

@@ -1,6 +1,6 @@
-# Arkanoid Cyberpunk 🚀
+# Arkan Cyberpunk 🚀
 
-¡Bienvenido a **Arkanoid Cyberpunk**! Una reimaginación moderna y vibrante del clásico juego de romper ladrillos, construido enteramente con tecnologías web estándar (HTML5, CSS3, Vanilla JavaScript) y diseñado con una estética Neón/Cyberpunk espectacular.
+¡Bienvenido a **Arkan Cyberpunk**! Una reimaginación moderna y vibrante del clásico juego de romper ladrillos, construido enteramente con tecnologías web estándar (HTML5, CSS3, Vanilla JavaScript) y diseñado con una estética Neón/Cyberpunk espectacular.
 
 ## ✨ Características Principales
 

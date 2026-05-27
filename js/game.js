@@ -374,6 +374,16 @@ export class ArkanoidGame {
       this.setState("VICTORY");
       return;
     }
+
+    this.laserActive = 0;
+    this.laserCooldown = 0;
+    this.laserBeamTimer = 0;
+    this.shieldActive = 0;
+    this.magnetActive = 0;
+    this.x2Active = 0;
+    this.x2Multiplier = 1;
+    this.powerUps = [];
+
     this.userData = updateMaxLevel(this.username, this.userData, this.currentLevel + 1);
     this.levelManager.loadLevel(this.currentLevel);
     this.balls = [];
@@ -459,11 +469,11 @@ export class ArkanoidGame {
     this.state = "START_MENU";
     this.overlay.classList.add("show");
     document.getElementById("pauseBtn").style.display = "none";
-    document.getElementById("overlayTitle").innerText = "ARKANOID CYBERPUNK";
+    document.getElementById("overlayTitle").innerText = "ARKAN CYBERPUNK";
     document.getElementById("overlayText").innerHTML =
       `<span style="color: var(--neon-cyan)">⚡ ${TOTAL_LEVELS} NIVELES PROGRESIVOS ⚡</span><br><br>Ingresa tu nombre y elige dificultad`;
     document.getElementById("overlayHelp").innerHTML =
-      `<input id="usernameInput" placeholder="Nombre" style="width:100%;padding:14px;border-radius:24px;border:1px solid rgba(0,245,255,.3);background:#091224;color:white;font-size:12px;font-family:'Press Start 2P',monospace"><br><br><select id="difficultySelect" style="width:100%;padding:12px;border-radius:24px;background:#091224;color:white;border:1px solid #0ff;"><option value="EASY">FÁCIL</option><option value="NORMAL" selected>NORMAL</option><option value="HARD">DIFÍCIL</option></select>`;
+      `<input id="usernameInput" placeholder="Nombre" style="width:100%;padding:14px;border-radius:24px;border:1px solid rgba(0,245,255,.3);background:#091224;color:white;font-size:12px;font-family:'Press Start 2P',monospace;letter-spacing:1px;outline:none;margin-bottom:12px;"><br><select id="difficultySelect" style="width:100%;padding:12px;border-radius:24px;background:#091224;color:white;border:1px solid #0ff;font-family:'Press Start 2P',monospace;letter-spacing:1px;outline:none;"><option value="EASY">FÁCIL</option><option value="NORMAL" selected>NORMAL</option><option value="HARD">DIFÍCIL</option></select>`;
 
     const btnContainer = document.getElementById("overlayButtons");
     btnContainer.innerHTML = "";

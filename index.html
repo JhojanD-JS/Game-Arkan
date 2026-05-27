@@ -1,66 +1,66 @@
 <!doctype html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no"
-    />
-    <meta name="theme-color" content="#050816" />
-    <title>Arkanoid Cyberpunk | Power by JD-JS</title>
 
-    <link rel="stylesheet" href="index.css" />
-  </head>
-  <body>
-    <div class="stage">
-      <div class="frame">
-        <canvas id="gameCanvas"></canvas>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+  <meta name="theme-color" content="#050816" />
+  <title>Arkan Cyberpunk | Power by JD-JS</title>
 
-        <div class="hud">
-          <div class="chip" id="hudLeft">⚡ CARGANDO</div>
-          <div class="chip" id="hudCenter">STATUS</div>
-          <div class="chip">
-            <span id="hudPoints">0 pts</span>
-            <button id="muteBtn" class="pause-btn mute-btn">🔊</button>
-            <button id="pauseBtn" class="pause-btn" style="display: none">
-              ⏸
-            </button>
-          </div>
+  <link rel="stylesheet" href="index.css" />
+</head>
+
+<body>
+  <div class="stage">
+    <div class="frame">
+      <canvas id="gameCanvas"></canvas>
+
+      <div class="hud">
+        <div class="chip" id="hudLeft">⚡ CARGANDO</div>
+        <div class="chip" id="hudCenter">STATUS</div>
+        <div class="chip">
+          <span id="hudPoints">0 pts</span>
+          <button id="muteBtn" class="pause-btn mute-btn">🔊</button>
+          <button id="pauseBtn" class="pause-btn" style="display: none">
+            ⏸
+          </button>
         </div>
+      </div>
 
-        <div class="overlay" id="overlay">
-          <div id="leaderboard" class="leaderboard-panel">
-            <h3>🏆 TOP 5 CYBERPUNK</h3>
-            <div id="leaderboardContent"></div>
-          </div>
-          <div class="panel" id="overlayPanel">
-            <h1 class="title" id="overlayTitle">ARKANOID CYBERPUNK</h1>
-            <p class="subtitle" id="overlayText">
-              50 niveles · Skins Premium · Estética de vanguardia
-            </p>
-            <p class="help" id="overlayHelp">
-              🎮 ← → / A/D · Táctil desliza · Q láser · ␣ lanzar · P pausa
-            </p>
-            <div class="small-row" id="overlayButtons"></div>
-            <div class="footer-note">
-              ✨ Guardado automático · 50 progresiones · Lujo cibernético ✨
-            </div>
-          </div>
+      <div class="overlay" id="overlay">
+        <div id="leaderboard" class="leaderboard-panel">
+          <h3>🏆 TOP 5 CYBERPUNK</h3>
+          <div id="leaderboardContent"></div>
         </div>
-
-        <div class="pause-menu" id="pauseMenu">
-          <div class="pause-panel">
-            <h2>⏸ PAUSA</h2>
-            <button id="resumeBtn" class="primary">▶ REANUDAR</button>
-            <button id="pauseShopBtn" class="secondary">🛒 TIENDA</button>
-            <button id="pauseMenuBtn" class="ghost">🏠 MENÚ</button>
+        <div class="panel" id="overlayPanel">
+          <h1 class="title" id="overlayTitle">ARKAN CYBERPUNK</h1>
+          <p class="subtitle" id="overlayText">
+            50 niveles · Skins Premium · Estética de vanguardia
+          </p>
+          <p class="help" id="overlayHelp">
+            🎮 ← → / A/D · Táctil desliza · Q láser · ␣ lanzar · P pausa
+          </p>
+          <div class="small-row" id="overlayButtons"></div>
+          <div class="footer-note">
+            ✨ Guardado automático · 50 progresiones · Lujo cibernético ✨
           </div>
         </div>
       </div>
+
+      <div class="pause-menu" id="pauseMenu">
+        <div class="pause-panel">
+          <h2>⏸ PAUSA</h2>
+          <button id="resumeBtn" class="primary">▶ REANUDAR</button>
+          <button id="pauseShopBtn" class="secondary">🛒 TIENDA</button>
+          <button id="pauseMenuBtn" class="ghost">🏠 MENÚ</button>
+        </div>
+      </div>
     </div>
+  </div>
 
-    <div id="powerupNotification" class="powerup-notification"></div>
+  <div id="powerupNotification" class="powerup-notification"></div>
 
-    <script type="module" src="js/main.js"></script>
-  </body>
+  <script type="module" src="js/main.js"></script>
+</body>
+
 </html>

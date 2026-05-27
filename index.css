@@ -36,6 +36,8 @@ body {
   color: #eef5ff;
   font-family: "Press Start 2P", "Courier New", monospace;
   font-size: 11px;
+  line-height: 1.8;
+  letter-spacing: 1px;
   touch-action: none;
 }
 

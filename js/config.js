@@ -23,7 +23,7 @@ export const SETTINGS = {
   sellaSpeed: 950,
   ballSpeed: 530,
   ballMaxSpeed: 820,
-  laserDuration: 10,
+  laserDuration: 3,
   laserCooldown: 0.22,
   shakeDecay: 18,
   maxShake: 14,
