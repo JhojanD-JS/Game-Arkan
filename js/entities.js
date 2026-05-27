@@ -53,11 +53,39 @@ class PoolParticle {
     if (!this.active) return;
     ctx.globalAlpha = this.life / this.maxLife;
     ctx.fillStyle = this.color;
+    
     if (this.shape === "rect") {
       ctx.save();
       ctx.translate(this.x, this.y);
       ctx.rotate(this.rot);
       ctx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size);
+      ctx.restore();
+    } else if (this.shape === "star") {
+      ctx.save();
+      ctx.translate(this.x, this.y);
+      ctx.rotate(this.rot);
+      ctx.beginPath();
+      let r = this.size / 1.5;
+      for (let i = 0; i < 5; i++) {
+        ctx.lineTo(Math.cos( (18 + i * 72) * Math.PI / 180 ) * r,
+                   -Math.sin( (18 + i * 72) * Math.PI / 180 ) * r);
+        ctx.lineTo(Math.cos( (54 + i * 72) * Math.PI / 180 ) * (r * 0.5),
+                   -Math.sin( (54 + i * 72) * Math.PI / 180 ) * (r * 0.5));
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    } else if (this.shape === "poly") {
+      ctx.save();
+      ctx.translate(this.x, this.y);
+      ctx.rotate(this.rot);
+      ctx.beginPath();
+      let r = this.size / 1.2;
+      for (let i = 0; i < 3; i++) {
+        ctx.lineTo(Math.cos(i * 120 * Math.PI / 180) * r, Math.sin(i * 120 * Math.PI / 180) * r);
+      }
+      ctx.closePath();
+      ctx.fill();
       ctx.restore();
     } else {
       ctx.beginPath();
@@ -66,7 +94,7 @@ class PoolParticle {
         this.y,
         this.size * (this.life / this.maxLife + 0.4),
         0,
-        Math.PI * 2,
+        Math.PI * 2
       );
       ctx.fill();
     }
@@ -105,7 +133,7 @@ export function spawnParticleSystem(x, y, color, count = 12) {
   }
 }
 
-export function spawnBlockFragments(x, y, w, h, color) {
+export function spawnBlockFragments(x, y, w, h, color, shape = "rect") {
   let count = 5 + Math.floor(Math.random() * 4);
   for (let i = 0; i < count; i++) {
     const p = getParticle();
@@ -122,7 +150,7 @@ export function spawnBlockFragments(x, y, w, h, color) {
       0.6 + Math.random() * 0.5,
       color,
       4 + Math.random() * 6,
-      "rect"
+      shape
     );
   }
 }

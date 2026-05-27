@@ -172,9 +172,67 @@ export const SKINS_CATALOG = [
     ballCore: "#aa44ff",
     ballTrail: "#4400aa",
   },
+  {
+    id: "hacker",
+    name: "HACKER",
+    price: 800,
+    unlockLevel: 5,
+    category: "ball",
+    sellaGradient: ["#00ff00", "#003300"],
+    sellaGlow: "#00ff00",
+    ballCore: "#aaffaa",
+    ballTrail: "#00ff00",
+  },
+  {
+    id: "bloodmoon",
+    name: "BLOOD MOON",
+    price: 1500,
+    unlockLevel: 10,
+    category: "ball",
+    sellaGradient: ["#880000", "#330000"],
+    sellaGlow: "#ff0000",
+    ballCore: "#ff3333",
+    ballTrail: "#880000",
+  },
+  {
+    id: "glitch",
+    name: "GLITCH",
+    price: 2500,
+    unlockLevel: 15,
+    category: "ball",
+    sellaGradient: ["#00ffff", "#ff00ff"],
+    sellaGlow: "#ffffff",
+    ballCore: "#ffffff",
+    ballTrail: "#ff00ff",
+  },
+  {
+    id: "supreme",
+    name: "SUPREME CYBERPUNK",
+    price: 5000,
+    unlockLevel: 20,
+    category: "ball",
+    sellaGradient: ["#ff0000", "#0000ff"],
+    sellaGlow: "#ffff00",
+    ballCore: "#ffffff",
+    ballTrail: "#00ffff",
+  },
+];
+
+export const THEMES_CATALOG = [
+  { id: "base", name: "BASE", price: 0 },
+  { id: "synthwave", name: "SYNTHWAVE", price: 1200 },
+  { id: "city", name: "DISTOPÍA", price: 2000 }
+];
+
+export const PARTICLES_CATALOG = [
+  { id: "rect", name: "PÍXELES", price: 0 },
+  { id: "star", name: "ESTRELLAS", price: 900 },
+  { id: "poly", name: "POLÍGONOS", price: 1500 }
 ];
 
 const _skinMap = new Map(SKINS_CATALOG.map((s) => [s.id, s]));
+const _themeMap = new Map(THEMES_CATALOG.map((t) => [t.id, t]));
+const _particleMap = new Map(PARTICLES_CATALOG.map((p) => [p.id, p]));
 
 export function getSkinById(id) {
   return _skinMap.get(id) || SKINS_CATALOG[0];
@@ -329,18 +387,32 @@ export function loadUser(username, difficulty = "NORMAL") {
   const users = JSON.parse(
     safeLocalStorage("get", "arkanoid_users_50") || "{}",
   );
-  if (users[username])
+  if (users[username]) {
+    let u = users[username];
+    if (!u.ownedThemes) {
+      u.ownedThemes = ["base"];
+      u.equippedTheme = "base";
+    }
+    if (!u.ownedParticles) {
+      u.ownedParticles = ["rect"];
+      u.equippedParticle = "rect";
+    }
     return {
-      ...users[username],
+      ...u,
       username,
       isNew: false,
-      difficulty: users[username].difficulty || "NORMAL",
+      difficulty: u.difficulty || "NORMAL",
     };
+  }
   const newUser = {
     points: 0,
-    ownedSkins: ["neon"],
+    ownedSkins: ["neon", "chrome"],
     equippedSkin: "neon",
     equippedSellaSkin: "chrome",
+    ownedThemes: ["base"],
+    equippedTheme: "base",
+    ownedParticles: ["rect"],
+    equippedParticle: "rect",
     maxLevelReached: 1,
     totalGamesPlayed: 0,
     lives: BALANCE.MAX_LIVES,
@@ -355,13 +427,15 @@ export function purchaseSkin(username, userData, skinId) {
   const skin = SKINS_CATALOG.find((s) => s.id === skinId);
   if (!skin) return { success: false, reason: "Skin no existe" };
   if (userData.ownedSkins.includes(skinId))
-    return { success: false, reason: "Ya la tienes" };
+    return { success: false, reason: "Ya posees esta skin" };
+  if (skin.unlockLevel && (userData.maxLevelReached || 1) < skin.unlockLevel)
+    return { success: false, reason: `Requiere Nivel ${skin.unlockLevel}` };
   if (userData.points < skin.price)
     return { success: false, reason: "Puntos insuficientes" };
   userData.points -= skin.price;
   userData.ownedSkins.push(skinId);
   saveUserImmediate(username, userData);
-  return { success: true, userData };
+  return { success: true };
 }
 
 export function equipSkin(username, userData, skinId) {
@@ -376,6 +450,42 @@ export function equipSellaSkin(username, userData, skinId) {
   if (!userData.ownedSkins.includes(skinId))
     return { success: false, reason: "No posees esta skin" };
   userData.equippedSellaSkin = skinId;
+  saveUserImmediate(username, userData);
+  return { success: true };
+}
+
+export function purchaseTheme(username, userData, themeId) {
+  const t = THEMES_CATALOG.find((s) => s.id === themeId);
+  if (!t) return { success: false, reason: "Entorno no existe" };
+  if (userData.ownedThemes.includes(themeId)) return { success: false, reason: "Ya lo posees" };
+  if (userData.points < t.price) return { success: false, reason: "Puntos insuficientes" };
+  userData.points -= t.price;
+  userData.ownedThemes.push(themeId);
+  saveUserImmediate(username, userData);
+  return { success: true };
+}
+
+export function equipTheme(username, userData, themeId) {
+  if (!userData.ownedThemes.includes(themeId)) return { success: false, reason: "No lo posees" };
+  userData.equippedTheme = themeId;
+  saveUserImmediate(username, userData);
+  return { success: true };
+}
+
+export function purchaseParticle(username, userData, particleId) {
+  const p = PARTICLES_CATALOG.find((s) => s.id === particleId);
+  if (!p) return { success: false, reason: "Partícula no existe" };
+  if (userData.ownedParticles.includes(particleId)) return { success: false, reason: "Ya lo posees" };
+  if (userData.points < p.price) return { success: false, reason: "Puntos insuficientes" };
+  userData.points -= p.price;
+  userData.ownedParticles.push(particleId);
+  saveUserImmediate(username, userData);
+  return { success: true };
+}
+
+export function equipParticle(username, userData, particleId) {
+  if (!userData.ownedParticles.includes(particleId)) return { success: false, reason: "No lo posees" };
+  userData.equippedParticle = particleId;
   saveUserImmediate(username, userData);
   return { success: true, userData };
 }

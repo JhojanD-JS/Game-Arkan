@@ -26,9 +26,15 @@ import {
   updateMaxLevel,
   getSkinById,
   SKINS_CATALOG,
+  THEMES_CATALOG,
+  PARTICLES_CATALOG,
   purchaseSkin,
   equipSkin,
   equipSellaSkin,
+  purchaseTheme,
+  equipTheme,
+  purchaseParticle,
+  equipParticle
 } from "./data.js";
 
 if (!CanvasRenderingContext2D.prototype.roundRect) {
@@ -298,6 +304,13 @@ export class ArkanoidGame {
     this.userData.totalGamesPlayed = (this.userData.totalGamesPlayed || 0) + 1;
     saveUserImmediate(username, this.userData);
     this.resetGame();
+    setTimeout(() => {
+      import("./utils.js").then((mod) => {
+        if (mod.showPowerupNotification) {
+          mod.showPowerupNotification(`¡BIENVENIDO, ${this.username.toUpperCase()}!`);
+        }
+      });
+    }, 500);
   }
 
   resetGame() {
@@ -404,6 +417,23 @@ export class ArkanoidGame {
     this.spawnBall();
     this.addShake(8);
     if (navigator.vibrate) navigator.vibrate([60, 30, 60]);
+    
+    let phrases = [
+      `¡DESPIERTA, ${this.username.toUpperCase()}!`,
+      "¿ESO ES TODO LO QUE TIENES?",
+      "¡NO TE RINDAS AHORA!",
+      "MÁS CONCENTRACIÓN...",
+      `¡VAMOS ${this.username.toUpperCase()}, TÚ PUEDES!`,
+      "SISTEMA DAÑADO. REINICIANDO...",
+      "¡CUIDADO CON LA BOLA!",
+      "OTRO INTENTO, OTRA OPORTUNIDAD."
+    ];
+    let phrase = phrases[Math.floor(Math.random() * phrases.length)];
+    import("./utils.js").then((mod) => {
+      if (mod.showPowerupNotification) {
+        mod.showPowerupNotification(phrase);
+      }
+    });
   }
 
   applyAmbientLight() {
@@ -517,7 +547,7 @@ export class ArkanoidGame {
     btnContainer.innerHTML = "";
     btnContainer.classList.add("shop-active");
 
-    const makeGrid = (title, skins, equippedId, isSella) => {
+    const makeGrid = (title, items, equippedId, type) => {
       let section = document.createElement("div");
       section.style.cssText = "width:100%;margin-bottom:24px";
 
@@ -531,48 +561,78 @@ export class ArkanoidGame {
       grid.className = "shop-grid-cosmetics";
       section.appendChild(grid);
 
-      for (let skin of skins) {
-        let owned = this.userData.ownedSkins.includes(skin.id);
-        let equipped = equippedId === skin.id;
+      for (let item of items) {
+        let isSkin = type === "ball" || type === "sella";
+        let isTheme = type === "theme";
+        let isParticle = type === "particle";
+        
+        let owned = false;
+        if (isSkin) owned = this.userData.ownedSkins.includes(item.id);
+        if (isTheme) owned = this.userData.ownedThemes.includes(item.id);
+        if (isParticle) owned = this.userData.ownedParticles.includes(item.id);
+
+        let equipped = equippedId === item.id;
+        let locked = item.unlockLevel && (this.userData.maxLevelReached || 1) < item.unlockLevel;
+
         let card = document.createElement("div");
         card.className =
           "skin-card" +
           (equipped ? " selected" : "") +
-          (owned ? " owned" : " locked");
+          (owned ? " owned" : locked ? " locked" : "");
 
         let preview = document.createElement("div");
-        if (isSella) {
-          preview.style.cssText = `width:90px;height:20px;border-radius:10px;margin:14px auto 16px;background:linear-gradient(90deg,${skin.sellaGradient[0]},#ffffff,${skin.sellaGradient[1]});box-shadow:0 0 16px ${skin.sellaGlow};`;
-        } else {
+        if (type === "sella") {
+          preview.style.cssText = `width:90px;height:20px;border-radius:10px;margin:14px auto 16px;background:linear-gradient(90deg,${item.sellaGradient[0]},#ffffff,${item.sellaGradient[1]});box-shadow:0 0 16px ${item.sellaGlow};`;
+        } else if (type === "ball") {
           preview.className = "skin-preview";
-          preview.style.background = `radial-gradient(circle at 30% 30%, #fff, ${skin.sellaGradient[0]})`;
-          preview.style.boxShadow = `0 0 20px ${skin.sellaGlow}`;
+          preview.style.background = `radial-gradient(circle at 30% 30%, #fff, ${item.sellaGradient[0]})`;
+          preview.style.boxShadow = `0 0 20px ${item.sellaGlow}`;
+        } else if (type === "theme") {
+          preview.style.cssText = `font-size:32px;text-align:center;margin:10px auto;`;
+          preview.textContent = "🌆";
+        } else if (type === "particle") {
+          preview.style.cssText = `font-size:32px;text-align:center;margin:10px auto;`;
+          preview.textContent = "✨";
         }
 
         let nameDiv = document.createElement("div");
         nameDiv.className = "skin-name";
-        nameDiv.textContent = skin.name;
+        nameDiv.textContent = item.name;
 
         let priceDiv = document.createElement("div");
         priceDiv.className = "skin-price";
-        priceDiv.textContent = owned
-          ? equipped
-            ? "✅ EQUIPADA"
-            : "✓ YA COMPRADA"
-          : `${skin.price} pts`;
+        
+        if (locked) {
+          priceDiv.textContent = `🔒 REQ. NIVEL ${item.unlockLevel}`;
+          priceDiv.style.color = "#ff4444";
+        } else {
+          priceDiv.textContent = owned
+            ? equipped
+              ? "✅ EQUIPADA"
+              : "✓ YA COMPRADA"
+            : `${item.price} pts`;
+        }
 
         let statusDiv = document.createElement("div");
         statusDiv.className = "skin-status";
 
-        if (!owned) {
+        if (locked) {
+           let lk = document.createElement("div");
+           lk.textContent = "BLOQUEADO";
+           lk.style.cssText = "color:#555;font-size:9px;margin-top:8px;";
+           statusDiv.appendChild(lk);
+        } else if (!owned) {
           let buy = document.createElement("button");
           buy.textContent = "COMPRAR";
-          buy.disabled = this.userData.points < skin.price;
+          buy.disabled = this.userData.points < item.price;
           buy.addEventListener("click", (e) => {
             e.stopPropagation();
-            let res = purchaseSkin(this.username, this.userData, skin.id);
+            let res;
+            if (isSkin) res = purchaseSkin(this.username, this.userData, item.id);
+            else if (isTheme) res = purchaseTheme(this.username, this.userData, item.id);
+            else if (isParticle) res = purchaseParticle(this.username, this.userData, item.id);
+
             if (res.success) {
-              this.userData = res.userData;
               this.renderShopUI(fromPause);
             } else alert(res.reason);
           });
@@ -582,12 +642,16 @@ export class ArkanoidGame {
           eq.textContent = "EQUIPAR";
           eq.addEventListener("click", (e) => {
             e.stopPropagation();
-            let res = isSella
-              ? equipSellaSkin(this.username, this.userData, skin.id)
-              : equipSkin(this.username, this.userData, skin.id);
+            let res;
+            if (type === "sella") res = equipSellaSkin(this.username, this.userData, item.id);
+            else if (type === "ball") res = equipSkin(this.username, this.userData, item.id);
+            else if (isTheme) res = equipTheme(this.username, this.userData, item.id);
+            else if (isParticle) res = equipParticle(this.username, this.userData, item.id);
+
             if (res.success) {
-              this.userData = res.userData;
-              if (!isSella) this.updateAllBallsSkin();
+              if (type === "sella") this.refreshSkinCache();
+              if (type === "ball") this.updateAllBallsSkin();
+              if (type === "theme") this._bgCache = null;
               this.renderShopUI(fromPause);
             }
           });
@@ -608,10 +672,16 @@ export class ArkanoidGame {
     let sellaSkins = SKINS_CATALOG.filter((s) => s.category === "sella");
 
     btnContainer.appendChild(
-      makeGrid("⚽ SKINS DE BOLA", ballSkins, this.userData.equippedSkin, false),
+      makeGrid("⚽ BOLA", ballSkins, this.userData.equippedSkin, "ball"),
     );
     btnContainer.appendChild(
-      makeGrid("🎮 SKINS DE PLATAFORMA", sellaSkins, this.userData.equippedSellaSkin || "chrome", true),
+      makeGrid("🎮 NAVE", sellaSkins, this.userData.equippedSellaSkin || "chrome", "sella"),
+    );
+    btnContainer.appendChild(
+      makeGrid("🌆 ENTORNOS", THEMES_CATALOG, this.userData.equippedTheme || "base", "theme"),
+    );
+    btnContainer.appendChild(
+      makeGrid("✨ PARTÍCULAS", PARTICLES_CATALOG, this.userData.equippedParticle || "rect", "particle"),
     );
 
     let back = document.createElement("button");
@@ -619,10 +689,7 @@ export class ArkanoidGame {
       back.textContent = "↩️ VOLVER AL JUEGO";
       back.className = "primary";
       back.addEventListener("click", () => {
-        this.overlay.classList.remove("show");
-        this.state = "PLAYING";
-        this.updateHUD();
-        btnContainer.classList.remove("shop-active");
+        this.setState("PLAYING");
       });
     } else {
       back.textContent = `⚔️ CONTINUAR AL NIVEL ${nxt} ⚔️`;
@@ -762,27 +829,63 @@ export class ArkanoidGame {
       off.width = SETTINGS.worldW;
       off.height = SETTINGS.worldH;
       let c = off.getContext("2d");
-      let g = c.createLinearGradient(0, 0, 0, SETTINGS.worldH);
-      g.addColorStop(0, "#04070f");
-      g.addColorStop(1, "#010208");
-      c.fillStyle = g;
-      c.fillRect(0, 0, SETTINGS.worldW, SETTINGS.worldH);
-      c.save();
-      c.globalAlpha = 0.1;
-      c.strokeStyle = "#00f5ff";
-      for (let y = 100; y < SETTINGS.worldH; y += 40) {
-        c.beginPath();
-        c.moveTo(0, y);
-        c.lineTo(SETTINGS.worldW, y);
-        c.stroke();
+      
+      let theme = (this.userData && this.userData.equippedTheme) ? this.userData.equippedTheme : "base";
+
+      if (theme === "synthwave") {
+        let g = c.createLinearGradient(0, 0, 0, SETTINGS.worldH);
+        g.addColorStop(0, "#1c0429");
+        g.addColorStop(1, "#360844");
+        c.fillStyle = g;
+        c.fillRect(0, 0, SETTINGS.worldW, SETTINGS.worldH);
+        c.save();
+        c.globalAlpha = 0.3;
+        c.strokeStyle = "#ff00ff";
+        for (let y = SETTINGS.worldH / 2; y < SETTINGS.worldH; y += (y - SETTINGS.worldH / 2 + 10) * 0.15) {
+          c.beginPath(); c.moveTo(0, y); c.lineTo(SETTINGS.worldW, y); c.stroke();
+        }
+        for (let x = -SETTINGS.worldW; x < SETTINGS.worldW * 2; x += 60) {
+          c.beginPath(); c.moveTo(SETTINGS.worldW / 2, SETTINGS.worldH / 2); c.lineTo(x, SETTINGS.worldH); c.stroke();
+        }
+        c.restore();
+      } else if (theme === "city") {
+        let g = c.createLinearGradient(0, 0, 0, SETTINGS.worldH);
+        g.addColorStop(0, "#011222");
+        g.addColorStop(1, "#033140");
+        c.fillStyle = g;
+        c.fillRect(0, 0, SETTINGS.worldW, SETTINGS.worldH);
+        c.fillStyle = "#010a14";
+        for (let i = 0; i < 8; i++) {
+          let bw = 40 + Math.random() * 60;
+          let bh = 100 + Math.random() * 200;
+          c.fillRect(i * 60, SETTINGS.worldH - bh, bw, bh);
+          c.fillStyle = Math.random() > 0.5 ? "#0ff" : "#f0f";
+          if (Math.random() > 0.3) c.fillRect(i * 60 + 10, SETTINGS.worldH - bh + 20, 5, 5);
+          c.fillStyle = "#010a14";
+        }
+      } else {
+        let g = c.createLinearGradient(0, 0, 0, SETTINGS.worldH);
+        g.addColorStop(0, "#04070f");
+        g.addColorStop(1, "#010208");
+        c.fillStyle = g;
+        c.fillRect(0, 0, SETTINGS.worldW, SETTINGS.worldH);
+        c.save();
+        c.globalAlpha = 0.1;
+        c.strokeStyle = "#00f5ff";
+        for (let y = 100; y < SETTINGS.worldH; y += 40) {
+          c.beginPath();
+          c.moveTo(0, y);
+          c.lineTo(SETTINGS.worldW, y);
+          c.stroke();
+        }
+        for (let x = 0; x < SETTINGS.worldW; x += 40) {
+          c.beginPath();
+          c.moveTo(x, 100);
+          c.lineTo(x, SETTINGS.worldH);
+          c.stroke();
+        }
+        c.restore();
       }
-      for (let x = 0; x < SETTINGS.worldW; x += 40) {
-        c.beginPath();
-        c.moveTo(x, 100);
-        c.lineTo(x, SETTINGS.worldH);
-        c.stroke();
-      }
-      c.restore();
       this._bgCache = off;
     }
     this.ctx.drawImage(this._bgCache, 0, 0);
@@ -1032,7 +1135,7 @@ export class ArkanoidGame {
 
           if (destroyed) {
             audioManager.playBrickDestroyed();
-            spawnBlockFragments(brick.x, brick.y, brick.w, brick.h, `hsl(${brick.hue}, 85%, 50%)`);
+            spawnBlockFragments(brick.x, brick.y, brick.w, brick.h, `hsl(${brick.hue}, 85%, 50%)`, this.userData.equippedParticle || "rect");
             this.combo++;
             if (this.combo >= 20) this.comboMultiplier = 3;
             else if (this.combo >= 10) this.comboMultiplier = 2;
@@ -1190,7 +1293,7 @@ export class ArkanoidGame {
                 if (destroyed) {
                   this.levelManager.onBrickDestroyed();
                   let pColor = `hsl(${br.hue}, 85%, 50%)`;
-                  spawnBlockFragments(br.x, br.y, br.w, br.h, pColor);
+                  spawnBlockFragments(br.x, br.y, br.w, br.h, pColor, this.userData.equippedParticle || "rect");
                   spawnParticleSystem(br.x + br.w / 2, br.y + br.h / 2, pColor, 10);
                 }
               }
@@ -1243,6 +1346,7 @@ export class ArkanoidGame {
               br.w,
               br.h,
               pColor,
+              this.userData.equippedParticle || "rect"
             );
             spawnParticleSystem(
               br.x + br.w / 2,
