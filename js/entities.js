@@ -18,8 +18,11 @@ class PoolParticle {
     this.maxLife = 1;
     this.color = "";
     this.size = 0;
+    this.shape = "circle";
+    this.rot = 0;
+    this.vRot = 0;
   }
-  init(x, y, vx, vy, life, color, size) {
+  init(x, y, vx, vy, life, color, size, shape = "circle") {
     this.active = true;
     this.x = x;
     this.y = y;
@@ -29,28 +32,44 @@ class PoolParticle {
     this.maxLife = life;
     this.color = color;
     this.size = size;
+    this.shape = shape;
+    this.rot = Math.random() * Math.PI * 2;
+    this.vRot = (Math.random() - 0.5) * 10;
   }
   update(dt) {
     this.life -= dt;
     this.x += this.vx * dt;
     this.y += this.vy * dt;
+    if (this.shape === "rect") {
+      this.vy += 800 * dt; // Gravity
+      this.rot += this.vRot * dt;
+    } else {
+      this.vy *= 0.98;
+    }
     this.vx *= 0.98;
-    this.vy *= 0.98;
     if (this.life <= 0) this.active = false;
   }
   draw(ctx) {
     if (!this.active) return;
     ctx.globalAlpha = this.life / this.maxLife;
     ctx.fillStyle = this.color;
-    ctx.beginPath();
-    ctx.arc(
-      this.x,
-      this.y,
-      this.size * (this.life / this.maxLife + 0.4),
-      0,
-      Math.PI * 2,
-    );
-    ctx.fill();
+    if (this.shape === "rect") {
+      ctx.save();
+      ctx.translate(this.x, this.y);
+      ctx.rotate(this.rot);
+      ctx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size);
+      ctx.restore();
+    } else {
+      ctx.beginPath();
+      ctx.arc(
+        this.x,
+        this.y,
+        this.size * (this.life / this.maxLife + 0.4),
+        0,
+        Math.PI * 2,
+      );
+      ctx.fill();
+    }
     ctx.globalAlpha = 1;
   }
 }
@@ -81,6 +100,29 @@ export function spawnParticleSystem(x, y, color, count = 12) {
       0.3 + Math.random() * 0.4,
       color,
       2 + Math.random() * 3,
+      "circle"
+    );
+  }
+}
+
+export function spawnBlockFragments(x, y, w, h, color) {
+  let count = 5 + Math.floor(Math.random() * 4);
+  for (let i = 0; i < count; i++) {
+    const p = getParticle();
+    if (!p) break;
+    const px = x + Math.random() * w;
+    const py = y + Math.random() * h;
+    const vx = (Math.random() - 0.5) * 300;
+    const vy = -50 - Math.random() * 250;
+    p.init(
+      px,
+      py,
+      vx,
+      vy,
+      0.6 + Math.random() * 0.5,
+      color,
+      4 + Math.random() * 6,
+      "rect"
     );
   }
 }
@@ -286,8 +328,26 @@ export class Brick {
     this.hp = hp;
     this.maxHp = hp;
     this.alive = true;
-    this.score = Math.round(50 * Math.max(1, hp) * (1 + diff));
+    this.score = 50 * hp;
     this.hue = (row * 37 + col * 19 + diff * 360) % 360;
+    
+    this.cracks = [];
+    let numCracks = 2 + Math.floor(Math.random() * 3);
+    for (let i = 0; i < numCracks; i++) {
+      let angle = Math.random() * Math.PI * 2;
+      let line = [];
+      let points = 3 + Math.floor(Math.random() * 2);
+      let rMax = Math.max(w, h) / 1.2;
+      for (let p = 1; p <= points; p++) {
+        let radius = (rMax / points) * p;
+        let pAngle = angle + (Math.random() - 0.5) * 0.8;
+        line.push({
+           x: Math.cos(pAngle) * radius,
+           y: Math.sin(pAngle) * radius
+        });
+      }
+      this.cracks.push(line);
+    }
   }
 
   hit() {
@@ -316,9 +376,44 @@ export class Brick {
     ctx.fillStyle = `rgba(255,255,255,${0.1 + 0.15 * ratio})`;
     ctx.fillRect(this.x + 2, this.y + 2, this.w - 4, 4);
     
+    if (this.hp < this.maxHp && this.hp !== -1) {
+      let dmgRatio = 1 - (this.hp / this.maxHp);
+      ctx.save();
+      ctx.translate(this.x + this.w / 2, this.y + this.h / 2);
+      
+      ctx.beginPath();
+      for (let line of this.cracks) {
+        let drawPoints = Math.ceil(line.length * dmgRatio);
+        if (drawPoints > 0) {
+          ctx.moveTo(0, 0);
+          for (let i = 0; i < drawPoints; i++) {
+            ctx.lineTo(line[i].x, line[i].y);
+          }
+        }
+      }
+      ctx.strokeStyle = "rgba(0, 0, 0, 0.8)";
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      
+      ctx.beginPath();
+      for (let line of this.cracks) {
+        let drawPoints = Math.ceil(line.length * dmgRatio);
+        if (drawPoints > 0) {
+          ctx.moveTo(0, 0);
+          for (let i = 0; i < drawPoints; i++) {
+            ctx.lineTo(line[i].x, line[i].y);
+          }
+        }
+      }
+      ctx.strokeStyle = `hsla(${this.hue}, 100%, 80%, 0.8)`;
+      ctx.lineWidth = 0.5;
+      ctx.stroke();
+      ctx.restore();
+    }
+    
     if (this.hp > 1) {
       ctx.fillStyle = "rgba(0,0,0,0.5)";
-      ctx.font = "bold 12px sans-serif";
+      ctx.font = "8px 'Press Start 2P', monospace";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText(this.hp, this.x + this.w / 2, this.y + this.h / 2 + 1);
@@ -373,7 +468,7 @@ export class PowerUp {
     ctx.roundRect(-15, -15, 30, 30, 10);
     ctx.fill();
 
-    ctx.font = "bold 13px sans-serif";
+    ctx.font = "12px 'Press Start 2P', monospace";
     ctx.textAlign = "center";
     ctx.fillStyle = "#fff";
     ctx.fillText(POWERUP_ICONS[this.type] || "?", 0, 5);

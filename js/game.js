@@ -15,6 +15,7 @@ import {
   spawnParticleSystem,
   particlePool,
   PowerUp,
+  spawnBlockFragments,
 } from "./entities.js";
 import {
   loadUser,
@@ -341,24 +342,12 @@ export class ArkanoidGame {
   }
 
   startLevelIntro() {
-    this.state = "LEVEL_INTRO";
-    const countdown = ["3", "2", "1", "¡GO!"];
-    let idx = 0;
-
-    if (this.levelCountdownInterval) clearInterval(this.levelCountdownInterval);
-
-    this.levelCountdownInterval = setInterval(() => {
-      if (this.state !== "LEVEL_INTRO") {
-        clearInterval(this.levelCountdownInterval);
-        return;
-      }
-      this.levelIntroText = countdown[idx];
-      idx++;
-      if (idx >= countdown.length) {
-        clearInterval(this.levelCountdownInterval);
-        this.setState("PLAYING");
-      }
-    }, 800);
+    this.setState("LEVEL_INTRO");
+    this.introTimer = 3.0; // 3 seconds countdown
+    this.sella.x = this.sella.targetX = SETTINGS.worldW / 2 - this.sella.w / 2;
+    this.balls.forEach(
+      (b) => ((b.x = this.sella.x + this.sella.w / 2), (b.y = this.sella.y - b.r))
+    );
   }
 
   advanceLevel() {
@@ -452,9 +441,13 @@ export class ArkanoidGame {
     if (next === "GAME_OVER" || next === "VICTORY") this.showEndScreen(next);
     if (next === "SHOP_INTERMISSION") this.renderShopUI(false);
 
-    if (next === "PLAYING") {
+    if (next === "PLAYING" || next === "LEVEL_INTRO") {
       this.overlay.classList.remove("show");
-      document.getElementById("pauseBtn").style.display = "flex";
+      if (next === "PLAYING") {
+        document.getElementById("pauseBtn").style.display = "flex";
+      } else {
+        document.getElementById("pauseBtn").style.display = "none";
+      }
       document.getElementById("overlayButtons").classList.remove("shop-active");
     } else {
       this.overlay.classList.add("show");
@@ -845,13 +838,13 @@ export class ArkanoidGame {
 
     if (this.state === "PLAYING" && this.balls.some((b) => b.stuck)) {
       this.ctx.globalAlpha = 0.7;
-      this.ctx.font = '10px "Press Start 2P"';
+      this.ctx.font = "10px 'Press Start 2P', monospace";
       this.ctx.fillStyle = "#fff";
       this.ctx.fillText("⚡ TOCA / ESPACIO PARA LANZAR", 24, 110);
     }
 
     this.ctx.globalAlpha = 1;
-    this.ctx.font = '12px "Press Start 2P"';
+    this.ctx.font = "12px 'Press Start 2P', monospace";
     this.ctx.fillStyle = "rgba(0,245,255,0.6)";
     this.ctx.textAlign = "right";
     this.ctx.fillText(
@@ -874,7 +867,7 @@ export class ArkanoidGame {
         SETTINGS.worldH / 2 - 60
       );
       
-      this.ctx.fillStyle = "var(--neon-cyan)";
+      this.ctx.fillStyle = "#00f5ff";
       this.ctx.font = "16px 'Press Start 2P', monospace";
       this.ctx.fillText(
         this.levelManager.levelName || "",
@@ -888,7 +881,7 @@ export class ArkanoidGame {
         this.ctx.save();
         this.ctx.translate(SETTINGS.worldW / 2, SETTINGS.worldH / 2 + 70);
         this.ctx.scale(scale, scale);
-        this.ctx.fillStyle = "var(--neon-magenta)";
+        this.ctx.fillStyle = "#ff3df2";
         this.ctx.font = "40px 'Press Start 2P', monospace";
         this.ctx.fillText(count.toString(), 0, 0);
         this.ctx.restore();
@@ -903,7 +896,7 @@ export class ArkanoidGame {
       this.ctx.save();
       this.ctx.translate(cx, cy);
       this.ctx.scale(s, s);
-      this.ctx.font = '48px "Press Start 2P"';
+      this.ctx.font = "40px 'Press Start 2P', monospace";
       this.ctx.fillStyle = "#00f5ff";
       this.ctx.textAlign = "center";
       this.ctx.shadowBlur = 20;
@@ -933,7 +926,7 @@ export class ArkanoidGame {
       if (this.laserActive > 0)
         acts.push(`🔥 ${Math.ceil(this.laserActive)}s`);
 
-      this.ctx.font = '9px "Press Start 2P"';
+      this.ctx.font = "8px 'Press Start 2P', monospace";
       this.ctx.fillStyle = "rgba(255,255,255,0.85)";
       this.ctx.textAlign = "left";
       acts.forEach((txt, i) =>
@@ -1017,6 +1010,7 @@ export class ArkanoidGame {
 
           if (destroyed) {
             audioManager.playBrickDestroyed();
+            spawnBlockFragments(brick.x, brick.y, brick.w, brick.h, `hsl(${brick.hue}, 85%, 50%)`);
             this.combo++;
             if (this.combo >= 20) this.comboMultiplier = 3;
             else if (this.combo >= 10) this.comboMultiplier = 2;
@@ -1190,10 +1184,18 @@ export class ArkanoidGame {
             let gain = br.score * this.x2Multiplier * this.comboMultiplier;
             this.pointsEarnedThisRun += gain;
             this.userData = addPoints(this.username, this.userData, gain);
+            let pColor = `hsl(${br.hue}, 85%, 50%)`;
+            spawnBlockFragments(
+              br.x,
+              br.y,
+              br.w,
+              br.h,
+              pColor,
+            );
             spawnParticleSystem(
               br.x + br.w / 2,
               br.y + br.h / 2,
-              `hsl(${br.hue},100%,65%)`,
+              pColor,
               18,
             );
           }
@@ -1225,6 +1227,14 @@ export class ArkanoidGame {
   update(dt) {
     this.shake = Math.max(0, this.shake - SETTINGS.shakeDecay * dt);
     if (this.levelCompleteAnimation) this._levelAnimT += dt;
+    
+    if (this.state === "LEVEL_INTRO") {
+      this.introTimer -= dt;
+      if (this.introTimer <= 0) {
+        this.setState("PLAYING");
+      }
+    }
+    
     if (this.state === "PLAYING") this.updateGameplay(dt);
     this.updateHUD();
     this.applyAmbientLight();
